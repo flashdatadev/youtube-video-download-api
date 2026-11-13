@@ -18,3 +18,7 @@ htmlcov/
 .idea/
 .DS_Store
 *.log
+*-job-id.txt
+*.mp4
+*.mp3
+*.webm

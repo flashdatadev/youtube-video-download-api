@@ -10,7 +10,7 @@ Runnable examples for the [FlashData YouTube Video Download API](https://flashda
 
 FlashData handles YouTube bot challenges, proxy routing, retries and media delivery. Your Python application does not need a local downloader, FFmpeg installation or proxy pool.
 
-[Quickstart](#quickstart) · [Python examples](#runnable-python-examples) · [MP3 audio](#youtube-to-mp3-api) · [Bulk downloads](#bulk-youtube-video-downloads) · [Storage](docs/storage.md) · [Recovery](docs/recovery.md) · [API reference](https://flashdata.dev/docs/sources/youtube_download)
+[Quickstart](#quickstart) · [Live demo](#real-download-demo) · [Python examples](#runnable-python-examples) · [MP3 audio](#youtube-to-mp3-api) · [Bulk downloads](#bulk-youtube-video-downloads) · [Storage](docs/storage.md) · [Recovery](docs/recovery.md) · [API reference](https://flashdata.dev/docs/sources/youtube_download)
 
 ## What you can build
 
@@ -27,7 +27,62 @@ FlashData handles YouTube bot challenges, proxy routing, retries and media deliv
 
 ## Quickstart
 
-Requires **Python 3.10+**. Clone the repository and install it:
+Requires **Python 3.10+**. Install the official SDK; this first example needs no repository checkout:
+
+```bash
+python -m pip install "flashdata>=1.2.0,<2"
+```
+
+### Download a YouTube video in Python
+
+[Get a FlashData API key](https://flashdata.dev/signup?utm_source=github&utm_medium=readme&utm_campaign=youtube-video-download-api), then pass it directly in Python. Replace the placeholder key, video ID and bucket credentials. Save as `download.py` and run `python download.py`:
+
+```python
+from flashdata import FlashData
+
+storage = {
+    "storage_type": "s3",
+    "storage_url": "your-media-bucket",
+    "region": "us-east-1",
+    "access_key": "your-storage-access-key",
+    "secret_key": "your-storage-secret-key",
+}
+
+with FlashData(api_key="your-flashdata-api-key") as client:
+    with open("download-job-id.txt", "x", encoding="utf-8") as saved_job:
+        job = client.youtube.download(
+            "YOUR_VIDEO_ID",  # The 11-character ID, e.g. jNQXAC9IVRw
+            storage=storage,
+            output_format="mp4",
+            video_quality="<=720",
+        )
+        print("Saved job:", job["id"], flush=True)
+        saved_job.write(job["id"])
+    client.jobs.wait(job["id"], timeout=600)
+    delivery = client.jobs.result(job["id"])
+
+media = delivery["results"][0]
+print(media["file_url"])
+print(media["file_size"], "bytes")
+```
+
+The **media file is in your bucket**. The printed delivery result identifies its location and size. Use your storage provider to read the object; a private bucket URL does not become public when a download completes. See [storage setup](docs/storage.md) for Cloudflare R2, GCS and other destinations.
+
+The job ID is saved before waiting. If the script stops or `download-job-id.txt` already exists, [recover that job](#recover-an-existing-download) instead of submitting again. Use a different filename for each intentional new download.
+
+## Real download demo
+
+[Try a real download in your browser](https://flashdata.dev/products/youtube-download#playground) — paste a YouTube URL, select **Prepare video**, then **Download MP4**.
+
+![FlashData live YouTube download demo: Me at the zoo completed and ready to download as MP4](assets/live-download-demo.jpg)
+
+Captured on **November 13, 2026** after downloading `jNQXAC9IVRw.mp4`: **635,505 bytes · 320×240 · 19.064 seconds**. The screenshot shows the completed live browser workflow. [View the capture details, checksum and reproduction steps](docs/live-demo.md).
+
+The browser demo delivers a file to your browser. Python API downloads use the cloud storage configured in the quickstart.
+
+## Runnable Python examples
+
+For URL normalization, saved checkpoints, bulk exports and local S3/R2 retrieval, install this repository:
 
 ```bash
 git clone https://github.com/flashdatadev/youtube-video-download-api.git
@@ -35,85 +90,11 @@ cd youtube-video-download-api
 python -m venv .venv
 ```
 
-Activate the environment:
-
-```bash
-# macOS / Linux
-source .venv/bin/activate
-```
-
-```powershell
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-```
+Activate with `source .venv/bin/activate` on macOS/Linux or `.\.venv\Scripts\Activate.ps1` in Windows PowerShell, then install:
 
 ```bash
 python -m pip install -e .
 ```
-
-This installs the toolkit from this checkout and the published `flashdata` SDK. It does not require a separate download-toolkit package from PyPI.
-
-### Download a YouTube video in Python
-
-[Get a FlashData API key](https://flashdata.dev/signup?utm_source=github&utm_medium=readme&utm_campaign=youtube-video-download-api), then pass it directly in Python. Replace the placeholder key, video ID and bucket credentials:
-
-```python
-from flashdata import FlashData
-from flashdata_download import collect_download, submit_download
-
-storage = {
-    "storage_type": "s3",
-    "storage_url": "your-media-bucket",
-    "region": "us-east-1",
-    "object_prefix": "youtube-downloads/YYYYMMDD",
-    "access_key": "your-storage-access-key",
-    "secret_key": "your-storage-secret-key",
-}
-
-with FlashData(api_key="your-flashdata-api-key") as client:
-    job_id = submit_download(
-        client,
-        "YOUR_VIDEO_ID",  # Or a YouTube watch, youtu.be, Shorts or live URL
-        storage=storage,
-        checkpoint="output/quickstart.job.json",
-        output_format="mp4",
-        video_quality="<=720",
-        upload_metadata=True,
-    )
-    print("Saved job:", job_id, flush=True)
-    delivery = collect_download(
-        client,
-        "output/quickstart.job.json",
-        output="output/quickstart-delivery.json",
-        timeout=600,
-    )
-
-media = delivery["results"][0]
-print(media["file_url"])
-print(media["file_size"], "bytes")
-```
-
-The **media file is in your bucket**. `quickstart-delivery.json` records its location, size, format and checksum. Use your storage provider to read the object; a private bucket URL does not become public when a download completes. The [S3/R2 example](examples/fetch_from_s3.py) saves an object to a local file.
-
-Each new submission needs a new checkpoint path. If a run times out, [recover the existing job](#recover-an-existing-download) using the saved checkpoint.
-
-### Try the offline demo
-
-```bash
-python -m flashdata_download demo
-# Equivalent installed command:
-# flashdata-download demo
-```
-
-```text
-output/demo/delivery.json    Illustrative MP4 delivery receipt
-output/demo/downloads.jsonl  Completed and failed bulk result examples
-output/demo/README.txt       What the fixtures represent
-```
-
-The demo is **synthetic**: no video is downloaded, no network request is made and no credits are used. For a live browser trial, use the [YouTube Download page](https://flashdata.dev/products/youtube-download).
-
-## Runnable Python examples
 
 Copy [examples/config.example.py](examples/config.example.py) to `examples/config.py` and fill in `API_KEY` and `STORAGE` **in that Python file**. The private copy is gitignored. All commands below run from the repository root; replace `YOUR_VIDEO_ID` with your video ID or URL.
 
@@ -133,23 +114,24 @@ Copy [examples/config.example.py](examples/config.example.py) to `examples/confi
 
 Use `--help` on any example. Live submissions use your FlashData account and configured storage. The offline demo is the credential-free path in this repository.
 
-## YouTube to MP3 API
+### Explore synthetic output offline
 
-Use the same client and storage configuration from the quickstart:
-
-```python
-audio_job_id = submit_download(
-    client,
-    "YOUR_VIDEO_ID",
-    storage=storage,
-    checkpoint="output/audio.job.json",
-    download_type="audio",
-    output_format="mp3",
-    audio_quality="192",
-)
+```bash
+python -m flashdata_download demo
+# Equivalent installed command: flashdata-download demo
 ```
 
-Keep this call inside the `with FlashData(...)` block, then collect its result with `collect_download`. Use `m4a` or `opus` for other audio outputs. Omit video-quality and frame-rate settings for audio-only work.
+This writes `delivery.json`, `downloads.jsonl` and `README.txt` under `output/demo/`. These are **synthetic fixtures** for exploring the output without credentials, network requests or credit usage. Use the [live demo above](#real-download-demo) to download a real video.
+
+## YouTube to MP3 API
+
+After installing the runnable examples, use your Python configuration to download MP3 audio:
+
+```bash
+python -m examples.download_audio YOUR_VIDEO_ID
+```
+
+The [Python example](examples/download_audio.py) sets `download_type="audio"`, `output_format="mp3"` and `audio_quality="192"`, saves the job ID and collects its delivery result. Use `--format m4a` or `--format opus` for other audio outputs. Omit video-quality and frame-rate settings for audio-only work.
 
 ## Video quality, formats and clips
 
@@ -203,24 +185,23 @@ For different settings per video, use [batch requests](docs/http-api.md#batch-do
 
 ## Recover an existing download
 
-A local polling timeout leaves the remote job running. This reads the original ID and makes no new submission:
+A local polling timeout leaves the remote job running. For the SDK quickstart, read the original saved ID and continue waiting:
 
 ```python
+from pathlib import Path
 from flashdata import FlashData
-from flashdata_download import collect_download
 
+job_id = Path("download-job-id.txt").read_text(encoding="utf-8").strip()
+if not job_id:
+    raise ValueError("No job ID was received. Reconcile the submission before retrying.")
 with FlashData(api_key="your-flashdata-api-key") as client:
-    delivery = collect_download(
-        client,
-        "output/quickstart.job.json",
-        output="output/recovered-delivery.json",
-        timeout=1200,
-    )
+    client.jobs.wait(job_id, timeout=1200)
+    delivery = client.jobs.result(job_id)
 
 print(delivery["results"][0]["file_url"])
 ```
 
-Checkpoints contain job IDs and local workflow information, not API keys or storage credentials. Existing checkpoint and result files are protected from accidental overwrites. A submission that loses its response leaves a checkpoint barrier instead of silently starting another download. See [recovery](docs/recovery.md) for upload drafts, paused bulk jobs, partial exports and expired results.
+The runnable examples use JSON checkpoints instead of the quickstart's text file. Recover those with `python -m examples.recover CHECKPOINT --output NEW_RESULT_FILE`, adding `--bulk` for a bulk job. Checkpoints contain job IDs and local workflow information, not API keys or storage credentials. Existing checkpoint and result files are protected from accidental overwrites. See [recovery](docs/recovery.md) for upload drafts, paused bulk jobs, partial exports and expired results.
 
 ## How delivery works
 

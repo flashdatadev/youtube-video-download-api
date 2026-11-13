@@ -1,0 +1,14 @@
+{
+  "kind": "live_browser_download_observation",
+  "captured_at": "2026-11-13T08:30:44Z",
+  "page_url": "https://flashdata.dev/products/youtube-download#playground",
+  "video_id": "jNQXAC9IVRw",
+  "filename": "jNQXAC9IVRw.mp4",
+  "file_size_bytes": 635505,
+  "output_format": "mp4",
+  "video_width": 320,
+  "video_height": 240,
+  "browser_duration_seconds": 19.063583,
+  "sha256": "3fae44f68f44c70a15eecddc8d93fe828ce820e2867a3328feed42601262fa69",
+  "screenshot": "assets/live-download-demo.jpg"
+}

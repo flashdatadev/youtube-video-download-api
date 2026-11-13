@@ -97,6 +97,7 @@ def test_readme_quickstart_runs_with_the_real_sdk(tmp_path, monkeypatch, capsys)
             assert payload["params"]["output_format"] == "mp4"
             assert payload["params"]["storage"]["storage_type"] == "s3"
             return httpx.Response(200, json={"id": job_id, "status": "pending"})
+        assert (tmp_path / "download-job-id.txt").read_text() == job_id
         if request.url.path.endswith("/results"):
             return httpx.Response(200, json=delivery)
         return httpx.Response(200, json={"job": {"id": job_id, "status": "completed"}})
@@ -108,6 +109,9 @@ def test_readme_quickstart_runs_with_the_real_sdk(tmp_path, monkeypatch, capsys)
     )
     monkeypatch.chdir(tmp_path)
     exec(compile(example, "README.md quickstart", "exec"), {})
-    assert json.loads((tmp_path / "output/quickstart-delivery.json").read_text()) == delivery
+    assert (tmp_path / "download-job-id.txt").read_text() == job_id
     assert "1024 bytes" in capsys.readouterr().out
     assert [request.method for request in requests] == ["POST", "GET", "GET"]
+    with pytest.raises(FileExistsError):
+        exec(compile(example, "README.md quickstart rerun", "exec"), {})
+    assert len(requests) == 3
