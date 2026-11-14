@@ -181,6 +181,8 @@ print(summary)
 
 The helper saves the accepted ID **before uploading and starting** the job. A bulk run applies the same media settings to the file. Successful deliveries and failed items are both exported, so you can inspect the collection before deciding which items to retry. The runnable bulk example exits with code `2` when rows fail or input items are invalid.
 
+For a complete collection workflow with ID deduplication, progress tracking, delivery CSVs and a failed-only retry file, use [Bulk Video Download with Python](https://github.com/flashdatadev/bulk-video-download). It builds on the same FlashData SDK and keeps each collection's input, saved job and result inventory together.
+
 For different settings per video, use [batch requests](docs/http-api.md#batch-downloads). For a managed collection, [request a YouTube video dataset sample](https://flashdata.dev/products/youtube-video-datasets?utm_source=github&utm_medium=readme&utm_campaign=youtube-video-download-api).
 
 ## Recover an existing download
