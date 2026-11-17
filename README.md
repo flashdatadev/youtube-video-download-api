@@ -30,7 +30,7 @@ FlashData handles YouTube bot challenges, proxy routing, retries and media deliv
 Requires **Python 3.10+**. Install the official SDK; this first example needs no repository checkout:
 
 ```bash
-python -m pip install "flashdata>=1.2.0,<2"
+python -m pip install "flashdata>=1.3.0,<2"
 ```
 
 ### Download a YouTube video in Python
@@ -67,6 +67,8 @@ print(media["file_size"], "bytes")
 ```
 
 The **media file is in your bucket**. The printed delivery result identifies its location and size. Use your storage provider to read the object; a private bucket URL does not become public when a download completes. See [storage setup](docs/storage.md) for Cloudflare R2, GCS and other destinations.
+
+Temporary credentials are supported through `storage["session_token"]` for S3, compatible STS providers, OSS, COS, BOS and TOS. See the [STS examples](docs/storage.md#temporary-credentials-sts) for single and bulk downloads.
 
 The job ID is saved before waiting. If the script stops or `download-job-id.txt` already exists, [recover that job](#recover-an-existing-download) instead of submitting again. Use a different filename for each intentional new download.
 

@@ -25,6 +25,7 @@ def main() -> None:
         "s3",
         aws_access_key_id=storage["access_key"],
         aws_secret_access_key=storage["secret_key"],
+        aws_session_token=storage.get("session_token"),
         region_name=storage.get("region"),
         endpoint_url=storage.get("endpoint_url"),
     )

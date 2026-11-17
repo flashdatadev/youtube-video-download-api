@@ -9,4 +9,6 @@ STORAGE = {
     "object_prefix": "youtube-downloads/YYYYMMDD",
     "access_key": "your-storage-access-key",
     "secret_key": "your-storage-secret-key",
+    # With temporary keys, also provide the token from the same session:
+    # "session_token": "your-session-token",
 }

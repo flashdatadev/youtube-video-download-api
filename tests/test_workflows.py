@@ -23,6 +23,7 @@ STORAGE = {
     "region": "us-east-1",
     "access_key": "test-storage-access",
     "secret_key": "test-storage-secret",
+    "session_token": "test-storage-session-token",
 }
 RESULT = {
     "id": JOB,
